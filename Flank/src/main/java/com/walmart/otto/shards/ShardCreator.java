@@ -6,14 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-class ShardCreator {
+public class ShardCreator {
   private Configurator configurator;
 
-  ShardCreator(Configurator configurator) {
+  public ShardCreator(Configurator configurator) {
     this.configurator = configurator;
   }
 
-  List<String> getShards(List<String> testCases) {
+  public List<String> getShards(List<String> testCases) {
     int testsInShard = configurator.getTestsInShard();
 
     Stack<String> availableTestCases = new Stack<>();
