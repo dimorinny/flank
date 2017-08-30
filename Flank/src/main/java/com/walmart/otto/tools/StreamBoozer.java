@@ -10,16 +10,10 @@ import java.util.List;
 public class StreamBoozer extends Thread {
   private final InputStream in;
   private final List<String> lines;
-  private final String[] command;
 
-  public List<String> getOutput() {
-    return lines;
-  }
-
-  public StreamBoozer(InputStream in, List<String> lines, String[] command) {
+  public StreamBoozer(InputStream in, List<String> lines) {
     this.in = in;
     this.lines = lines;
-    this.command = command.clone();
   }
 
   @Override
@@ -27,7 +21,7 @@ public class StreamBoozer extends Thread {
     BufferedReader br = null;
     try {
       br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-      String line = null;
+      String line;
       while ((line = br.readLine()) != null) {
         lines.add(line);
       }

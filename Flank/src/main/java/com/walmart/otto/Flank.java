@@ -4,21 +4,21 @@ import com.linkedin.dex.parser.DexParser;
 import com.linkedin.dex.parser.TestMethod;
 import com.walmart.otto.configurator.ConfigReader;
 import com.walmart.otto.configurator.Configurator;
-import com.walmart.otto.reporter.PriceReporter;
-import com.walmart.otto.reporter.TimeReporter;
 import com.walmart.otto.shards.ShardExecutor;
 import com.walmart.otto.tools.GcloudTool;
-import com.walmart.otto.tools.GsutilTool;
+import com.walmart.otto.tools.GsUtilTool;
 import com.walmart.otto.tools.ProcessExecutor;
 import com.walmart.otto.tools.ToolManager;
 import com.walmart.otto.utils.FileUtils;
 import com.walmart.otto.utils.FilterUtils;
-import java.io.*;
-import java.math.BigDecimal;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class Flank {
@@ -27,16 +27,14 @@ public class Flank {
 
   public void start(String[] args)
       throws RuntimeException, IOException, InterruptedException, ExecutionException {
-    long startTime = System.currentTimeMillis();
 
-    for (String file : new String[] {args[0], args[1]}) {
+    for (String file : new String[]{args[0], args[1]}) {
       if (!FileUtils.doFileExist(file)) {
         throw new FileNotFoundException("File not found: " + file);
       }
     }
 
     configurator = new ConfigReader(Constants.CONFIG_PROPERTIES).getConfiguration();
-
     toolManager = new ToolManager().load(loadTools(args[0], args[1], configurator));
 
     if (configurator.getProjectName() == null) {
@@ -49,24 +47,14 @@ public class Flank {
       throw new IllegalArgumentException("No tests found within the specified package!");
     }
 
-    printShards(configurator, testCases.size());
-
-    GsutilTool gsutilTool = toolManager.get(GsutilTool.class);
-
-    downloadTestTimeFile(gsutilTool, configurator.getShardDuration());
+    GsUtilTool gsUtilTool = toolManager.get(GsUtilTool.class);
 
     new ShardExecutor(configurator, toolManager)
-        .execute(testCases, gsutilTool.uploadAPKsToBucket());
+        .execute(testCases, gsUtilTool.uploadAPKsToBucket());
 
-    gsutilTool.deleteAPKs();
+    gsUtilTool.deleteAPKs();
 
-    gsutilTool.fetchBucket();
-
-    uploadTestTimeFile(gsutilTool, configurator.getShardDuration());
-
-    printEstimates();
-
-    printExecutionTimes(startTime);
+    gsUtilTool.fetchBucket();
   }
 
   public static void main(String[] args) {
@@ -76,13 +64,7 @@ public class Flank {
       if (validateArguments(args)) {
         flank.start(args);
       }
-    } catch (RuntimeException e) {
-      exitWithFailure(e);
-    } catch (IOException e) {
-      exitWithFailure(e);
-    } catch (InterruptedException e) {
-      exitWithFailure(e);
-    } catch (ExecutionException e) {
+    } catch (RuntimeException | IOException | InterruptedException | ExecutionException e) {
       exitWithFailure(e);
     }
   }
@@ -103,54 +85,6 @@ public class Flank {
     return toolConfig;
   }
 
-  private void printExecutionTimes(long startTime) {
-    System.out.println(
-        "\n\n["
-            + TimeReporter.getEndTime()
-            + "] Total time: "
-            + TimeReporter.getTotalTime(startTime)
-            + "\n");
-  }
-
-  private void printEstimates() {
-    System.out.println(
-        "\nBillable time: "
-            + PriceReporter.getTotalBillableTime(TimeReporter.getExecutionTimes())
-            + " min(s) \n");
-    HashMap<String, BigDecimal> prices =
-        PriceReporter.getTotalPrice(TimeReporter.getExecutionTimes());
-    System.out.print("Estimated cost: ");
-    for (Map.Entry<String, BigDecimal> price : prices.entrySet()) {
-      System.out.print("$" + price.getValue() + "(" + price.getKey() + ") ");
-    }
-  }
-
-  private void downloadTestTimeFile(GsutilTool gsutilTool, int shardDuration)
-      throws IOException, InterruptedException {
-    if (shardDuration == -1) {
-      return;
-    }
-
-    if (new File(Constants.TEST_TIME_FILE).exists()) {
-      System.out.println(
-          "\nLocal 'flank.tests' found. It contains test execution times used to create shards with configurable durations. Default shard duration is 120 seconds.\n");
-    } else if (!new File(Constants.TEST_TIME_FILE).exists()) {
-      if (gsutilTool.findTestTimeFile()) {
-        System.out.println(
-            "\nDownloading 'flank.tests'. It contains test execution times used to create shards with configurable durations. Default shard duration is 120 seconds.\n");
-        gsutilTool.downloadTestTimeFile();
-      }
-    }
-  }
-
-  private void uploadTestTimeFile(GsutilTool gsutilTool, int shardDuration)
-      throws IOException, InterruptedException {
-    if (shardDuration == -1) {
-      return;
-    }
-    gsutilTool.uploadTestTimeFile();
-  }
-
   private String getProjectName(ToolManager toolManager) throws IOException, InterruptedException {
     System.setOut(getEmptyStream());
 
@@ -168,30 +102,12 @@ public class Flank {
     return true;
   }
 
-  private void printShards(Configurator configurator, int numberOfShards) {
-    int numShards = configurator.getNumShards();
-
-    if (configurator.getShardIndex() != -1) {
-      if (numShards != -1) {
-        numberOfShards = numShards;
-      }
-      System.out.println(
-          "\nShard with index: "
-              + configurator.getShardIndex()
-              + " ("
-              + numberOfShards
-              + " shards in total) will be executed on: "
-              + configurator.getDeviceIds());
-      return;
-    }
-  }
-
   private List<String> getTestCaseNames(String[] args) {
     System.setOut(getEmptyStream());
     List<String> filteredTests = new ArrayList<>();
 
     for (TestMethod testMethod : DexParser.findTestMethods(args[1])) {
-      if (!testMethod.getAnnotationNames().stream().anyMatch(str -> str.contains("Ignore"))) {
+      if (testMethod.getAnnotationNames().stream().noneMatch(str -> str.contains("Ignore"))) {
         filteredTests.add(testMethod.getTestName());
       }
     }
@@ -204,15 +120,16 @@ public class Flank {
     return filteredTests;
   }
 
-  static PrintStream originalStream = System.out;
+  private static PrintStream originalStream = System.out;
 
-  public PrintStream getEmptyStream() {
+  private PrintStream getEmptyStream() {
     PrintStream emptyStream = null;
     try {
       emptyStream =
           new PrintStream(
               new OutputStream() {
-                public void write(int b) {}
+                public void write(int b) {
+                }
               },
               false,
               "UTF-8");

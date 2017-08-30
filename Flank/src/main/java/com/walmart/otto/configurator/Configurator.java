@@ -16,25 +16,15 @@ public class Configurator {
   private boolean fetchXMLFiles = true;
   private boolean debug = false;
   private boolean fetchBucket = false;
-  private int numShards = -1;
-  private int shardIndex = -1;
+  private int testsInShard = 15;
   private int shardTimeout = 5;
-  private int shardDuration = 120;
 
-  public int getNumShards() {
-    return numShards;
+  public int getTestsInShard() {
+    return testsInShard;
   }
 
-  public void setNumShards(int numShards) {
-    this.numShards = numShards;
-  }
-
-  public int getShardIndex() {
-    return shardIndex;
-  }
-
-  public void setShardIndex(int shardIndex) {
-    this.shardIndex = shardIndex;
+  public void setTestsInShard(int testsInShard) {
+    this.testsInShard = testsInShard;
   }
 
   public String getDeviceIds() {
@@ -107,14 +97,6 @@ public class Configurator {
     this.shardTimeout = shardTimeout;
   }
 
-  public int getShardDuration() {
-    return shardDuration;
-  }
-
-  public void setShardDuration(int shardDuration) throws NumberFormatException {
-    this.shardDuration = shardDuration;
-  }
-
   public String getEnvironmentVariables() {
     return environmentVariables;
   }
@@ -123,7 +105,7 @@ public class Configurator {
     this.environmentVariables = environmentVariables;
   }
 
-  public String getTestTimeBucket() {
+  public String getProjectBucket() {
     return "gs://" + getProjectName() + "/";
   }
 

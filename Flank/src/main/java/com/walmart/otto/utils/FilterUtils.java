@@ -6,7 +6,7 @@ import java.util.List;
 public class FilterUtils {
 
   public static List<String> filterTests(List<String> testNames, String packageName) {
-    List<String> filteredTests = new ArrayList<String>();
+    List<String> filteredTests = new ArrayList<>();
 
     for (String testName : testNames) {
       if (testName.startsWith(packageName)) {

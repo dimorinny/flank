@@ -1,20 +1,13 @@
 package com.walmart.otto.tools;
 
-import static com.walmart.otto.utils.FileUtils.getSimpleName;
-
-import com.walmart.otto.reporter.TimeReporter;
-import com.walmart.otto.utils.FileUtils;
-import com.walmart.otto.utils.FilterUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
+
+import static com.walmart.otto.utils.FileUtils.getSimpleName;
 
 public class GcloudTool extends Tool {
-  boolean printTests = true;
-
-  private int latestExecutionTime;
 
   public GcloudTool(ToolManager.Config config) {
     super(ToolManager.GCLOUD_TOOL, config);
@@ -74,7 +67,7 @@ public class GcloudTool extends Tool {
     }
   }
 
-  public void executeGcloud(String[] commands, String test)
+  private void executeGcloud(String[] commands, String test)
       throws RuntimeException, IOException, InterruptedException {
     List<String> inputStreamList = new ArrayList<>();
     List<String> errorStreamList = new ArrayList<>();
@@ -86,27 +79,17 @@ public class GcloudTool extends Tool {
     for (String line : errorStreamList) {
       if (line.contains("More details are available")) {
         resultsLink = line;
-      } else if (line.contains("Test time=")) {
-        String[] timeLine = line.split(Pattern.quote("time="));
-        latestExecutionTime = Integer.parseInt(timeLine[1].replaceAll("\\D+", ""));
-        TimeReporter.addExecutionTime(Integer.parseInt(timeLine[1].replaceAll("\\D+", "")));
       } else if (line.contains("ERROR")) {
         //TODO retry when error is returned from FTL
-        //throw new RuntimeException(line);
       }
     }
 
     for (String line : inputStreamList) {
-      if (printTests) {
-        printTests(test);
-      }
-
       System.out.println(line);
     }
     if (resultsLink != null) {
       System.out.println("\n" + resultsLink + "\n");
     }
-    printTests = true;
   }
 
   public String getProjectName() throws IOException, InterruptedException {
@@ -121,21 +104,5 @@ public class GcloudTool extends Tool {
       projectName = projectProperties;
     }
     return projectName;
-  }
-
-  private void printTests(String test) {
-    test = FilterUtils.filterString(test, "class");
-
-    if (test.charAt(test.length() - 1) == ',') {
-      test = test.substring(0, test.length() - 1);
-    }
-
-    if (!test.contains(",")) {
-      //Save test case name and execution times
-      FileUtils.writeToShardFile(test, String.valueOf(latestExecutionTime));
-    }
-
-    System.out.println("Test(s):" + test);
-    printTests = false;
   }
 }

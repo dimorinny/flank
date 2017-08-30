@@ -4,7 +4,7 @@ import java.io.*;
 import java.util.Properties;
 
 public class ConfigReader {
-  Configurator configurator;
+  private Configurator configurator;
   private String fileName;
 
   public ConfigReader(String fileName) throws IllegalArgumentException {
@@ -43,20 +43,8 @@ public class ConfigReader {
         configurator.setDeviceIds(value);
         break;
 
-      case "numShards":
-        configurator.setNumShards(Integer.parseInt(value));
-        break;
-
-      case "shardIndex":
-        configurator.setShardIndex(Integer.parseInt(value));
-        break;
-
       case "shard-timeout":
         configurator.setShardTimeout(Integer.parseInt(value));
-        break;
-
-      case "shard-duration":
-        configurator.setShardDuration(Integer.parseInt(value));
         break;
 
       case "locales":
@@ -77,6 +65,10 @@ public class ConfigReader {
 
       case "gcloud-path":
         configurator.setGcloud(value);
+        break;
+
+      case "tests-in-shard":
+        configurator.setTestsInShard(Integer.parseInt(value));
         break;
 
       case "gsutil-path":

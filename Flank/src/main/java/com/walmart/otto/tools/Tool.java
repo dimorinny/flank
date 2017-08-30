@@ -16,7 +16,7 @@ public abstract class Tool {
 
   private List<String> errorStream = new ArrayList<>();
 
-  Tool(String name, ToolManager.Config config) {
+  public Tool(String name, ToolManager.Config config) {
     this.name = name;
     this.configurator = config.configurator;
     this.appAPK = config.appAPK;

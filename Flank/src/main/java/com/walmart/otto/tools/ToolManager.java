@@ -1,6 +1,7 @@
 package com.walmart.otto.tools;
 
 import com.walmart.otto.configurator.Configurator;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,18 +13,8 @@ public class ToolManager {
 
   public ToolManager load(Config config) {
     tools.add(new GcloudTool(config));
-    tools.add(new GsutilTool(config));
+    tools.add(new GsUtilTool(config));
     return this;
-  }
-
-  public Tool get(String toolName) {
-    for (Tool tool : tools) {
-      if (tool.getName().equals(toolName)) {
-        return tool;
-      }
-    }
-
-    return null;
   }
 
   public <T> T get(Class<T> outClazz) {
