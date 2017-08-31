@@ -44,28 +44,30 @@ public abstract class Tool {
     return errorStream;
   }
 
-  public void executeCommand(final String[] commands, List<String> inputStream)
+  public int executeCommand(final String[] commands, List<String> inputStream)
       throws IOException, InterruptedException {
-    processExecutor.executeCommand(commands, inputStream, errorStream);
+    return processExecutor.executeCommand(commands, inputStream, errorStream);
   }
 
-  public void executeCommand(final String[] commands)
+  public int executeCommand(final String[] commands)
       throws RuntimeException, IOException, InterruptedException {
     List<String> inputErrorStreamList = new ArrayList<>();
 
-    processExecutor.executeCommand(commands, new ArrayList<>(), inputErrorStreamList);
+    int exitCode = processExecutor.executeCommand(commands, new ArrayList<>(), inputErrorStreamList);
 
     for (String input : inputErrorStreamList) {
       if (input.contains("Exception")) {
         throw new RuntimeException(input);
       }
     }
+
+    return exitCode;
   }
 
-  public void executeCommand(
+  public int executeCommand(
       final String[] commands, List<String> inputStreamList, List<String> errorStreamList)
       throws IOException, InterruptedException {
 
-    processExecutor.executeCommand(commands, inputStreamList, errorStreamList);
+    return processExecutor.executeCommand(commands, inputStreamList, errorStreamList);
   }
 }

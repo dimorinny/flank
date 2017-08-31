@@ -15,7 +15,7 @@ public class ProcessBuilder {
     pb = new java.lang.ProcessBuilder(command);
   }
 
-  public void start() throws IOException, InterruptedException {
+  public int start() throws IOException, InterruptedException {
     Process process = pb.start();
 
     StreamBoozer seInfo = new StreamBoozer(process.getInputStream(), inputStream);
@@ -26,5 +26,9 @@ public class ProcessBuilder {
 
     seInfo.join();
     seError.join();
+
+    process.waitFor();
+
+    return process.exitValue();
   }
 }

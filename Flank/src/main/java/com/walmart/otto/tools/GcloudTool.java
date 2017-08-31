@@ -13,7 +13,7 @@ public class GcloudTool extends Tool {
     super(ToolManager.GCLOUD_TOOL, config);
   }
 
-  public void runGcloud(String testCase, String bucket)
+  public int runInstrumentationCommand(String testCase, String bucket)
       throws RuntimeException, IOException, InterruptedException {
     // don't quote arguments or ProcessBuilder will error in strange ways.
     String[] runGcloud =
@@ -57,7 +57,7 @@ public class GcloudTool extends Tool {
 
     String[] cmdArray = gcloudList.toArray(new String[0]);
 
-    executeGcloud(cmdArray, testCase);
+    return executeGcloud(cmdArray, testCase);
   }
 
   private void addParameterIfValueSet(List<String> list, String parameter, String value) {
@@ -67,14 +67,14 @@ public class GcloudTool extends Tool {
     }
   }
 
-  private void executeGcloud(String[] commands, String test)
+  private int executeGcloud(String[] commands, String test)
       throws RuntimeException, IOException, InterruptedException {
     List<String> inputStreamList = new ArrayList<>();
     List<String> errorStreamList = new ArrayList<>();
 
     String resultsLink = null;
 
-    executeCommand(commands, inputStreamList, errorStreamList);
+    int exitCode = executeCommand(commands, inputStreamList, errorStreamList);
 
     for (String line : errorStreamList) {
       if (line.contains("More details are available")) {
@@ -90,6 +90,8 @@ public class GcloudTool extends Tool {
     if (resultsLink != null) {
       System.out.println("\n" + resultsLink + "\n");
     }
+
+    return exitCode;
   }
 
   public String getProjectName() throws IOException, InterruptedException {

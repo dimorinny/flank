@@ -1,27 +1,32 @@
-plugins {
+buildscript {
+    dependencies {
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.4.2"
+    }
+
+    repositories {
+        jcenter()
+    }
 }
 
-repositories {
-    jcenter()
+plugins {
 }
 
 group 'com.walmart.otto'
 version '1.4.1'
 
 apply plugin: 'java'
-apply plugin: 'findbugs'
+apply plugin: 'maven-publish'
 
-tasks.withType(FindBugs) {
-    reports {
-        xml.enabled false
-        html.enabled true
-    }
+repositories {
+    jcenter()
 }
 
 dependencies {
     compile 'com.linkedin.dextestparser:parser:1.1.0'
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
+
+apply plugin: 'com.jfrog.artifactory'
 
 jar {
     dependsOn configurations.runtime
@@ -33,4 +38,41 @@ jar {
     manifest {
         attributes 'Main-Class': 'com.walmart.otto.Flank'
     }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = group
+            artifactId = 'Flank'
+            version = version
+
+            from components.java
+        }
+    }
+}
+
+artifactory {
+    contextUrl = "${repositoryUrl}"
+    publish {
+        repository {
+            repoKey = version.endsWith('SNAPSHOT') ? 'plugins-snapshot-local' : 'plugins-release-local'
+            username = "${repositoryUsername}"
+            password = "${repositoryPassword}"
+            maven = true
+        }
+    }
+}
+
+artifactoryPublish {
+    publications('mavenJava')
+}
+
+task publishFast {
+    dependsOn 'clean'
+    dependsOn 'assemble'
+    dependsOn 'generatePomFileForMavenJavaPublication'
+    dependsOn 'artifactoryPublish'
+    assemble.mustRunAfter 'clean'
+    artifactoryPublish.mustRunAfter 'generatePomFileForMavenJavaPublication', 'assemble'
 }

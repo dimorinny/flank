@@ -15,7 +15,7 @@ public class ProcessExecutor {
   // skip: ' - [113/113 files][  2.1 MiB/  2.1 MiB] 100% Done '
   private static Pattern uploadProgress = Pattern.compile(".*\\[\\d*/\\d* files]\\[.*% Done.*");
 
-  public void executeCommand(
+  public int executeCommand(
       final String[] commands, List<String> inputStream, List<String> errorStream)
       throws IOException, InterruptedException {
     Boolean isDebug = configurator.isDebug();
@@ -28,7 +28,7 @@ public class ProcessExecutor {
       command.append("\u001B[0m");
       System.out.println("$ " + command.toString());
     }
-    new ProcessBuilder(commands, inputStream, errorStream).start();
+    int exitCode = new ProcessBuilder(commands, inputStream, errorStream).start();
 
     if (isDebug) {
       List<String> cleanErrorStream = new ArrayList<>();
@@ -39,8 +39,12 @@ public class ProcessExecutor {
         }
       }
 
+      System.out.println("Exit Code: " + String.valueOf(exitCode));
+
       printStreams(inputStream, cleanErrorStream);
     }
+
+    return exitCode;
   }
 
   private void printStreams(List<String> inputStream, List<String> errorStream) {

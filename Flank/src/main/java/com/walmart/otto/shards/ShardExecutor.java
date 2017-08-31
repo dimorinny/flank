@@ -27,19 +27,21 @@ public class ShardExecutor {
     shardCreator = new ShardCreator(configurator);
   }
 
-  public void execute(List<String> testCases, String bucket)
+  public int execute(List<String> testCases, String bucket)
       throws InterruptedException, ExecutionException, IOException {
 
-    executeShards(testCases, bucket);
+    int code = executeShards(testCases, bucket);
 
     if (configurator.isFetchXMLFiles()) {
       fetchResults(toolManager.get(GsUtilTool.class));
     }
+
+    return code;
   }
 
-  private void executeShards(List<String> testCases, String bucket)
+  private int executeShards(List<String> testCases, String bucket)
       throws InterruptedException, ExecutionException {
-    List<Future> futures = new ArrayList<>();
+    List<Future<Integer>> futures = new ArrayList<>();
     List<String> shards = shardCreator.getShards(testCases);
 
     System.out.println(
@@ -52,15 +54,22 @@ public class ShardExecutor {
       futures.add(executeShard(shards.get(i), bucket));
     }
 
+    int resultCode = 0;
+
+    for (Future<Integer> future : futures) {
+      int code = future.get();
+      if (code != 0) {
+        resultCode = code;
+      }
+    }
+
     executorService.shutdown();
 
-    for (Future future : futures) {
-      future.get();
-    }
+    return resultCode;
   }
 
-  private Future executeShard(String testCase, String bucket) throws RuntimeException {
-    Callable<Void> testCaseCallable = getCallable(testCase, bucket);
+  private Future<Integer> executeShard(String testCase, String bucket) throws RuntimeException {
+    Callable<Integer> testCaseCallable = getCallable(testCase, bucket);
 
     return executorService.submit(testCaseCallable);
   }
@@ -83,11 +92,10 @@ public class ShardExecutor {
     System.out.println("Executing shard " + index + ": " + tests + "\n");
   }
 
-  private Callable<Void> getCallable(String testCase, String bucket) throws RuntimeException {
+  private Callable<Integer> getCallable(String testCase, String bucket) throws RuntimeException {
     return () -> {
       final GcloudTool gcloudTool = toolManager.get(GcloudTool.class);
-      gcloudTool.runGcloud(testCase, bucket);
-      return null;
+      return gcloudTool.runInstrumentationCommand(testCase, bucket);
     };
   }
 }

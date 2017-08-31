@@ -7,6 +7,7 @@ import com.walmart.otto.configurator.Configurator;
 import com.walmart.otto.shards.ShardExecutor;
 import com.walmart.otto.tools.GcloudTool;
 import com.walmart.otto.tools.GsUtilTool;
+import com.walmart.otto.tools.ProcessBuilder;
 import com.walmart.otto.tools.ProcessExecutor;
 import com.walmart.otto.tools.ToolManager;
 import com.walmart.otto.utils.FileUtils;
@@ -49,12 +50,14 @@ public class Flank {
 
     GsUtilTool gsUtilTool = toolManager.get(GsUtilTool.class);
 
-    new ShardExecutor(configurator, toolManager)
+    int resultCode = new ShardExecutor(configurator, toolManager)
         .execute(testCases, gsUtilTool.uploadAPKsToBucket());
 
     gsUtilTool.deleteAPKs();
 
     gsUtilTool.fetchBucket();
+
+    System.exit(resultCode);
   }
 
   public static void main(String[] args) {
